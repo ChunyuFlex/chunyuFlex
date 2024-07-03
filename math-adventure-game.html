@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>小明的魔法數學王國冒險</title>
+    <style>
+        body {
+            font-family: 'Microsoft JhengHei', Arial, sans-serif;
+            background-color: #f0f8ff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+        #game-container {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            max-width: 800px;
+            width: 100%;
+        }
+        h1 {
+            color: #4a4a4a;
+            text-align: center;
+        }
+        #story, #question {
+            margin-bottom: 20px;
+        }
+        #options {
+            display: flex;
+            flex-direction: column;
+        }
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+        #calendar {
+            display: none;
+            margin-top: 20px;
+            text-align: center;
+        }
+        #calendar table {
+            margin: 0 auto;
+            border-collapse: collapse;
+        }
+        #calendar td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            width: 30px;
+            height: 30px;
+        }
+        #score {
+            text-align: right;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>小明的魔法數學王國冒險</h1>
+        <div id="score">分數：<span id="score-value">0</span></div>
+        <div id="story"></div>
+        <div id="question"></div>
+        <div id="options"></div>
+        <div id="calendar"></div>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const gameStages = [
+            {
+                story: "小明來到了魔法數學王國的入口。守門人告訴他：「要進入王國，你必須正確回答我的問題！」",
+                question: "如果你有3個5元硬幣，總共有多少錢？",
+                options: ["10元", "15元", "20元"],
+                correctAnswer: 1
+            },
+            {
+                story: "小明進入了王國，發現自己在一個神奇的市集裡。一位商人正在售賣魔法糖果。",
+                question: "如果一顆魔法糖果要8元，小明想買2顆，他需要付多少錢？",
+                options: ["14元", "16元", "18元"],
+                correctAnswer: 1
+            },
+            {
+                story: "小明繼續前進，來到了一座神奇的橋前。橋上刻著數字謎題。",
+                question: "如果20減去7等於多少？",
+                options: ["11", "12", "13"],
+                correctAnswer: 2
+            },
+            {
+                story: "過了橋，小明遇到了一位魔法師。魔法師說：「我可以幫你找到回家的路，但你必須先幫我解決一個問題。」",
+                question: "魔法師有15顆星星，他想分給3個學徒。每個學徒分到幾顆星星？",
+                options: ["3顆", "5顆", "7顆"],
+                correctAnswer: 1
+            },
+            {
+                story: "魔法師很滿意小明的答案，他指引小明來到了一個神奇的日曆房間。",
+                question: "如果今天是星期三，3天後是星期幾？",
+                options: ["星期五", "星期六", "星期日"],
+                correctAnswer: 1,
+                showCalendar: true
+            },
+            {
+                story: "小明在日曆房間學會了日期計算，接著他來到了一個神奇的錢幣池。",
+                question: "如果小明有2個10元和3個5元，總共有多少錢？",
+                options: ["25元", "30元", "35元"],
+                correctAnswer: 2
+            },
+            {
+                story: "穿過錢幣池，小明遇到了一個數字精靈。精靈說：「猜猜我心裡想的是哪個數字！」",
+                question: "這個數字比10大，比15小，是偶數。這個數字是多少？",
+                options: ["11", "12", "14"],
+                correctAnswer: 2
+            },
+            {
+                story: "數字精靈被小明的聰明才智折服了，他指引小明來到了一個神奇的時鐘塔。",
+                question: "如果現在是下午3點，6小時後是幾點？",
+                options: ["晚上8點", "晚上9點", "晚上10點"],
+                correctAnswer: 1
+            },
+            {
+                story: "在時鐘塔裡，小明遇到了時間守護者。守護者說：「要通過這裡，你需要解開最後一個謎題。」",
+                question: "一個月有31天，小明的生日是這個月的第一個星期日。如果這個月的1號是星期二，小明的生日是幾號？",
+                options: ["5號", "6號", "7號"],
+                correctAnswer: 0,
+                showCalendar: true
+            }
+        ];
+
+        let currentStage = 0;
+        let score = 0;
+
+        function displayStage() {
+            const stage = gameStages[currentStage];
+            document.getElementById('story').innerText = stage.story;
+            document.getElementById('question').innerText = stage.question;
+            
+            const optionsContainer = document.getElementById('options');
+            optionsContainer.innerHTML = '';
+            stage.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.innerText = option;
+                button.onclick = () => checkAnswer(index);
+                optionsContainer.appendChild(button);
+            });
+
+            if (stage.showCalendar) {
+                showCalendar();
+            } else {
+                hideCalendar();
+            }
+        }
+
+        function showCalendar() {
+            const calendarDiv = document.getElementById('calendar');
+            calendarDiv.style.display = 'block';
+            calendarDiv.innerHTML = `
+                <table>
+                    <tr><td>日</td><td>一</td><td>二</td><td>三</td><td>四</td><td>五</td><td>六</td></tr>
+                    <tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td>7</td></tr>
+                    <tr><td>8</td><td>9</td><td>10</td><td>11</td><td>12</td><td>13</td><td>14</td></tr>
+                    <tr><td>15</td><td>16</td><td>17</td><td>18</td><td>19</td><td>20</td><td>21</td></tr>
+                    <tr><td>22</td><td>23</td><td>24</td><td>25</td><td>26</td><td>27</td><td>28</td></tr>
+                    <tr><td>29</td><td>30</td><td>31</td><td></td><td></td><td></td><td></td></tr>
+                </table>
+            `;
+        }
+
+        function hideCalendar() {
+            document.getElementById('calendar').style.display = 'none';
+        }
+
+        function checkAnswer(selectedIndex) {
+            const stage = gameStages[currentStage];
+            if (selectedIndex === stage.correctAnswer) {
+                document.getElementById('result').innerText = "答對了！太棒了！";
+                score += 10;
+                updateScore();
+                currentStage++;
+                if (currentStage < gameStages.length) {
+                    setTimeout(displayStage, 1500);
+                } else {
+                    endGame();
+                }
+            } else {
+                document.getElementById('result').innerText = "答錯了，再試一次吧！";
+                score -= 5;
+                updateScore();
+            }
+        }
+
+        function updateScore() {
+            document.getElementById('score-value').innerText = score;
+        }
+
+        function endGame() {
+            document.getElementById('story').innerText = "恭喜你！小明成功解決了所有挑戰，找到了回家的路。你是一個真正的數學小英雄！";
+            document.getElementById('question').innerText = "";
+            document.getElementById('options').innerHTML = "";
+            document.getElementById('result').innerText = `遊戲結束！你成功完成了所有關卡！最終得分：${score}分`;
+            hideCalendar();
+        }
+
+        displayStage();
+    </script>
+</body>
+</html>
